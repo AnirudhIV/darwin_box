@@ -1,4 +1,4 @@
-"""AI-powered CSV/Excel Data Q&A app: Streamlit + DuckDB + Groq (Llama 3.3 70B)."""
+"""AI-powered CSV/Excel Data Q&A app: Streamlit + DuckDB + Groq (openai/gpt-oss-120b)."""
 import os
 
 import duckdb
@@ -87,8 +87,8 @@ def render_turn(turn: dict):
             st.error(f"I couldn't answer that: {turn['error']}")
         else:
             df = turn["result_df"]
-            if df.shape[0] == 1 and df.shape[1] <= 2:
-                col = df.columns[-1]
+            if df.shape == (1, 1):
+                col = df.columns[0]
                 st.metric(label=str(col), value=str(df.iloc[0][col]))
             else:
                 st.dataframe(df, use_container_width=True)

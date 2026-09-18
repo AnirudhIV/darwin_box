@@ -10,9 +10,9 @@ SQL for transparency.
 - **Streamlit** — single-page app (upload UI, chat interface, results).
 - **DuckDB** (in-memory) — every uploaded file/sheet becomes a DuckDB table;
   DuckDB executes the generated SQL, including joins across files/sheets.
-- **Groq API running Llama 3.3 70B** (`llama-3.3-70b-versatile`) — an
-  open-source model (weights are open; Groq just hosts fast inference) used
-  for text-to-SQL generation.
+- **Groq API running `openai/gpt-oss-120b`** — an open-weight model (Apache
+  2.0 licensed; Groq just hosts fast inference) used for text-to-SQL
+  generation.
 - **Plotly** — chart rendering, chart type picked by simple heuristics on the
   query result shape (no LLM call needed for this part).
 - **pandas / openpyxl** — reading CSV and `.xlsx` files.

@@ -5,7 +5,7 @@ from groq import Groq
 
 from sql_guard import validate_sql
 
-MODEL = "llama-3.3-70b-versatile"
+MODEL = "openai/gpt-oss-120b"
 
 SYSTEM_PROMPT = """You are a SQL generation assistant. You write DuckDB-compatible SQL to answer
 questions about the user's uploaded data.

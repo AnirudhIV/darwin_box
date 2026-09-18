@@ -16,9 +16,9 @@ and let me spend the remaining time on reliability and safety rather than
 plumbing.
 
 **Stack**: Streamlit (single app, fast to build a credible UI), DuckDB
-(in-memory, zero-copy over pandas), Groq running Llama 3.3 70B (open-source
-weights, fast hosted inference so the demo stays responsive), Plotly for
-charts.
+(in-memory, zero-copy over pandas), Groq running `openai/gpt-oss-120b`
+(open-weight model, fast hosted inference so the demo stays responsive),
+Plotly for charts.
 
 ## Key decisions
 
