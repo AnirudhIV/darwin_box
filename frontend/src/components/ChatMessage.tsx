@@ -28,6 +28,11 @@ export function ChatMessage({ turn }: { turn: ChatTurn }) {
               <p className="text-xs uppercase tracking-wide text-neutral-400">{turn.columns[0]}</p>
               <p className="text-3xl font-semibold text-neutral-900">{formatValue(turn.rows[0]?.[0])}</p>
             </div>
+          ) : turn.rows.length === 0 ? (
+            <p className="text-sm text-neutral-500">
+              The query ran successfully but matched no rows. Try rephrasing, or check the loaded
+              table's columns in the sidebar — the filter value may not match what's in the data.
+            </p>
           ) : (
             <ResultTable columns={turn.columns} rows={turn.rows} />
           )}
