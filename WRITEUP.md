@@ -15,10 +15,14 @@ of building custom multi-dataframe join logic. This kept the core loop small
 and let me spend the remaining time on reliability and safety rather than
 plumbing.
 
-**Stack**: Streamlit (single app, fast to build a credible UI), DuckDB
-(in-memory, zero-copy over pandas), Groq running `openai/gpt-oss-120b`
-(open-weight model, fast hosted inference so the demo stays responsive),
-Plotly for charts.
+**Stack**: DuckDB (in-memory, zero-copy over pandas), Groq running
+`openai/gpt-oss-120b` (open-weight model, fast hosted inference so the demo
+stays responsive). Two UIs share this same core: a polished **React +
+Tailwind** frontend behind a **FastAPI** backend (primary), and a
+single-file **Streamlit** app (fallback, built first to de-risk the
+4-6h budget, kept working standalone). Charts render via Plotly in
+Streamlit and Recharts in React, both driven by one shape-detection
+heuristic in `charting.py`.
 
 ## Key decisions
 
@@ -58,8 +62,14 @@ Plotly for charts.
    back from DuckDB's own `DESCRIBE`, not inferred from pandas dtypes — what
    the model sees always matches what will actually execute.
 5. **CSV export and per-session isolation.** Results are downloadable, and
-   each visitor's `DuckDB` connection/chat history lives in `st.session_state`
-   — no shared or persisted state between sessions.
+   each visitor's `DuckDB` connection/chat history lives in its own session
+   (`st.session_state` in Streamlit; an explicit `session_id` in the FastAPI
+   backend) — no shared or persisted state between sessions.
+6. **One core, two UIs, zero duplicated logic.** The FastAPI backend imports
+   `data_manager.py`/`llm.py`/`sql_guard.py`/`charting.py` unchanged; the only
+   new code is the HTTP layer and JSON serialization. The chart-selection
+   heuristic itself lives in one shared function so the Plotly and Recharts
+   renderers can't drift apart.
 
 ## What I'd build next
 
