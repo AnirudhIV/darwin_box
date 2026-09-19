@@ -35,18 +35,18 @@ app.add_middleware(
 
 
 class _FileAdapter:
-    """Adapts FastAPI's UploadFile to the .name/.read()/.seek() interface
-    data_manager.load_uploaded_file expects (matches Streamlit's UploadedFile)."""
+    """Adapts FastAPI's UploadFile to the .name + file-object interface
+    data_manager.load_uploaded_file expects (matches Streamlit's UploadedFile).
+    Excel parsing (openpyxl/zipfile) needs more than read()/seek() - tell(),
+    seekable(), etc. - so unknown attributes delegate straight to the
+    underlying SpooledTemporaryFile rather than re-declaring each one."""
 
     def __init__(self, upload: UploadFile):
         self.name = upload.filename
         self._file = upload.file
 
-    def read(self, *args, **kwargs):
-        return self._file.read(*args, **kwargs)
-
-    def seek(self, *args, **kwargs):
-        return self._file.seek(*args, **kwargs)
+    def __getattr__(self, name):
+        return getattr(self._file, name)
 
 
 def _table_summaries(tables_meta: dict) -> list[dict]:
