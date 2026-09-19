@@ -34,8 +34,10 @@ def _style_axes(fig):
     return fig
 
 
-def build_chart(df: pd.DataFrame):
-    """Returns a Plotly figure, or None if no sensible chart applies."""
+def _pick_axes(df: pd.DataFrame):
+    """Shared shape-detection heuristic used by both build_chart (Plotly, for
+    Streamlit) and select_chart_spec (JSON, for the React frontend), so the
+    two can never drift apart. Returns (chart_type, x, y, plot_df) or None."""
     if df is None or df.empty:
         return None
 
@@ -57,10 +59,7 @@ def build_chart(df: pd.DataFrame):
         if y is None:
             return None
         plot_df = df.sort_values(x)
-        fig = px.line(plot_df, x=x, y=y, markers=True, color_discrete_sequence=[SEQUENTIAL_BLUE])
-        fig.update_traces(line=dict(width=2))
-        fig.update_layout(**_LAYOUT)
-        return _style_axes(fig)
+        return "line", x, y, plot_df
 
     categorical_cols = [c for c in other_cols if c not in date_cols and df[c].nunique() <= 30]
 
@@ -68,17 +67,56 @@ def build_chart(df: pd.DataFrame):
     if categorical_cols and numeric_cols:
         x, y = categorical_cols[0], numeric_cols[0]
         plot_df = df[[x, y]].sort_values(y, ascending=False)
-        fig = px.bar(plot_df, x=x, y=y, color_discrete_sequence=[SEQUENTIAL_BLUE])
-        fig.update_traces(marker_line_width=0)
-        fig.update_layout(**_LAYOUT)
-        return _style_axes(fig)
+        return "bar", x, y, plot_df
 
     # two numeric columns, no date/category -> scatter
     if len(numeric_cols) >= 2:
         x, y = numeric_cols[0], numeric_cols[1]
-        fig = px.scatter(df, x=x, y=y, color_discrete_sequence=[SEQUENTIAL_BLUE])
-        fig.update_traces(marker=dict(size=9))
-        fig.update_layout(**_LAYOUT)
-        return _style_axes(fig)
+        return "scatter", x, y, df
 
     return None
+
+
+def build_chart(df: pd.DataFrame):
+    """Returns a Plotly figure, or None if no sensible chart applies."""
+    picked = _pick_axes(df)
+    if picked is None:
+        return None
+    chart_type, x, y, plot_df = picked
+
+    if chart_type == "line":
+        fig = px.line(plot_df, x=x, y=y, markers=True, color_discrete_sequence=[SEQUENTIAL_BLUE])
+        fig.update_traces(line=dict(width=2))
+    elif chart_type == "bar":
+        fig = px.bar(plot_df, x=x, y=y, color_discrete_sequence=[SEQUENTIAL_BLUE])
+        fig.update_traces(marker_line_width=0)
+    else:  # scatter
+        fig = px.scatter(plot_df, x=x, y=y, color_discrete_sequence=[SEQUENTIAL_BLUE])
+        fig.update_traces(marker=dict(size=9))
+
+    fig.update_layout(**_LAYOUT)
+    return _style_axes(fig)
+
+
+def select_chart_spec(df: pd.DataFrame):
+    """Same shape-detection heuristic as build_chart, re-expressed as a
+    JSON-serializable spec instead of a Plotly Figure, for the React
+    frontend. Returns {"type", "x_key", "y_key", "data"} or None. Does its
+    own lightweight NaN/datetime cleanup so charting.py stays independent of
+    the backend package (backend depends on charting.py, never the reverse)."""
+    picked = _pick_axes(df)
+    if picked is None:
+        return None
+    chart_type, x, y, plot_df = picked
+
+    plot_df = plot_df[[x, y]].copy()
+    if pd.api.types.is_datetime64_any_dtype(plot_df[x]):
+        plot_df[x] = plot_df[x].dt.strftime("%Y-%m-%dT%H:%M:%S")
+    plot_df = plot_df.astype(object).where(pd.notnull(plot_df), None)
+
+    return {
+        "type": chart_type,
+        "x_key": x,
+        "y_key": y,
+        "data": plot_df.to_dict(orient="records"),
+    }
