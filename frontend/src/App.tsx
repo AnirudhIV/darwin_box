@@ -1,3 +1,4 @@
+import { ChartBar } from '@phosphor-icons/react'
 import { useEffect, useState } from 'react'
 import { askQuestion, getTables, uploadFiles } from './api'
 import { ChatInput } from './components/ChatInput'
@@ -80,7 +81,9 @@ export default function App() {
     <div className="h-screen flex bg-neutral-50">
       <aside className="w-80 shrink-0 border-r border-neutral-200 bg-white p-4 flex flex-col gap-4 overflow-y-auto">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900 flex items-center gap-2">📊 Data Q&A</h1>
+          <h1 className="text-lg font-semibold text-neutral-900 flex items-center gap-2">
+            <ChartBar size={20} weight="bold" className="text-blue-600" /> Data Q&A
+          </h1>
           <p className="text-xs text-neutral-500 mt-1">Upload CSV/Excel files, then ask questions.</p>
         </div>
 

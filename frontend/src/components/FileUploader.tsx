@@ -1,3 +1,4 @@
+import { UploadSimple } from '@phosphor-icons/react'
 import { useRef, useState } from 'react'
 
 export function FileUploader({
@@ -44,6 +45,7 @@ export function FileUploader({
           e.target.value = ''
         }}
       />
+      <UploadSimple size={22} className="mx-auto mb-2 text-neutral-400" />
       <p className="text-sm font-medium text-neutral-700">Drop CSV or Excel files here</p>
       <p className="text-xs text-neutral-400 mt-1">or click to browse — multiple files supported</p>
     </div>

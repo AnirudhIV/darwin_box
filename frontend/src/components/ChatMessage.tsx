@@ -1,3 +1,5 @@
+import { CaretDown, CaretRight, DownloadSimple, WarningCircle } from '@phosphor-icons/react'
+import { useState } from 'react'
 import type { ChatTurn } from '../types'
 import { downloadCsv } from '../csv'
 import { formatValue } from '../format'
@@ -5,6 +7,7 @@ import { ChartRenderer } from './ChartRenderer'
 import { ResultTable } from './ResultTable'
 
 export function ChatMessage({ turn }: { turn: ChatTurn }) {
+  const [sqlOpen, setSqlOpen] = useState(false)
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
@@ -16,7 +19,10 @@ export function ChatMessage({ turn }: { turn: ChatTurn }) {
       <div className="flex justify-start">
         <div className="bg-white border border-neutral-200 rounded-2xl rounded-bl-sm px-4 py-3 max-w-[90%] w-full space-y-3">
           {turn.error ? (
-            <p className="text-sm text-red-600">I couldn't answer that: {turn.error}</p>
+            <p className="text-sm text-red-600 flex items-start gap-1.5">
+              <WarningCircle size={16} weight="bold" className="shrink-0 mt-0.5" />
+              <span>I couldn't answer that: {turn.error}</span>
+            </p>
           ) : turn.is_scalar ? (
             <div>
               <p className="text-xs uppercase tracking-wide text-neutral-400">{turn.columns[0]}</p>
@@ -30,22 +36,28 @@ export function ChatMessage({ turn }: { turn: ChatTurn }) {
 
           {!turn.error && turn.rows.length > 0 && (
             <button
-              className="text-xs font-medium text-blue-600 hover:text-blue-700"
+              className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
               onClick={() => downloadCsv(turn.columns, turn.rows)}
             >
-              Download result as CSV
+              <DownloadSimple size={14} weight="bold" /> Download result as CSV
             </button>
           )}
 
           {turn.sql && (
-            <details className="text-xs">
-              <summary className="cursor-pointer text-neutral-500 font-medium select-none">
+            <div className="text-xs">
+              <button
+                className="flex items-center gap-1 text-neutral-500 font-medium select-none"
+                onClick={() => setSqlOpen((o) => !o)}
+              >
+                {sqlOpen ? <CaretDown size={12} /> : <CaretRight size={12} />}
                 View generated SQL
-              </summary>
-              <pre className="mt-2 bg-neutral-50 border border-neutral-200 rounded-lg p-3 overflow-x-auto text-neutral-700">
-                {turn.sql}
-              </pre>
-            </details>
+              </button>
+              {sqlOpen && (
+                <pre className="mt-2 bg-neutral-50 border border-neutral-200 rounded-lg p-3 overflow-x-auto text-neutral-700">
+                  {turn.sql}
+                </pre>
+              )}
+            </div>
           )}
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { ArrowUp } from '@phosphor-icons/react'
 import { useState } from 'react'
 
 export function ChatInput({
@@ -38,7 +39,7 @@ export function ChatInput({
         {loading ? (
           <span className="w-3 h-3 border-2 border-white/60 border-t-transparent rounded-full animate-spin" />
         ) : (
-          '↑'
+          <ArrowUp size={16} weight="bold" />
         )}
       </button>
     </div>

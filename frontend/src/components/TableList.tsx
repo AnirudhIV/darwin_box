@@ -1,3 +1,4 @@
+import { CaretDown, CaretRight } from '@phosphor-icons/react'
 import { useState } from 'react'
 import type { TableSummary } from '../types'
 
@@ -12,7 +13,9 @@ function TableItem({ table }: { table: TableSummary }) {
         <span className="text-sm font-medium text-neutral-800 truncate">
           {table.name} <span className="text-neutral-400 font-normal">({table.n_rows} rows)</span>
         </span>
-        <span className="text-neutral-400 text-xs">{open ? '▾' : '▸'}</span>
+        <span className="text-neutral-400">
+          {open ? <CaretDown size={14} /> : <CaretRight size={14} />}
+        </span>
       </button>
       {open && (
         <div className="px-3 pb-3 text-xs text-neutral-500 space-y-1">
