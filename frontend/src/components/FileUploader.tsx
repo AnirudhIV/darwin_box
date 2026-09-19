@@ -19,7 +19,9 @@ export function FileUploader({
   return (
     <div
       className={`rounded-xl border-2 border-dashed p-6 text-center cursor-pointer transition-colors ${
-        dragOver ? 'border-blue-400 bg-blue-50' : 'border-neutral-300 bg-neutral-50 hover:bg-neutral-100'
+        dragOver
+          ? 'border-blue-400 bg-blue-50 dark:border-blue-500 dark:bg-blue-950/40'
+          : 'border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800'
       } ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
       onClick={() => inputRef.current?.click()}
       onDragOver={(e) => {
@@ -45,9 +47,11 @@ export function FileUploader({
           e.target.value = ''
         }}
       />
-      <UploadSimple size={22} className="mx-auto mb-2 text-neutral-400" />
-      <p className="text-sm font-medium text-neutral-700">Drop CSV or Excel files here</p>
-      <p className="text-xs text-neutral-400 mt-1">or click to browse — multiple files supported</p>
+      <UploadSimple size={22} className="mx-auto mb-2 text-neutral-400 dark:text-neutral-500" />
+      <p className="text-sm font-medium text-neutral-700 dark:text-neutral-200">Drop CSV or Excel files here</p>
+      <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+        or click to browse — multiple files supported
+      </p>
     </div>
   )
 }

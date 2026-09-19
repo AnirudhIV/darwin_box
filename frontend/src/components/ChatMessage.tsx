@@ -11,25 +11,29 @@ export function ChatMessage({ turn }: { turn: ChatTurn }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <div className="bg-blue-600 text-white rounded-2xl rounded-br-sm px-4 py-2 max-w-[80%] text-sm">
+        <div className="bg-blue-600 dark:bg-blue-500 text-white rounded-2xl rounded-br-sm px-4 py-2 max-w-[80%] text-sm">
           {turn.question}
         </div>
       </div>
 
       <div className="flex justify-start">
-        <div className="bg-white border border-neutral-200 rounded-2xl rounded-bl-sm px-4 py-3 max-w-[90%] w-full space-y-3">
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl rounded-bl-sm px-4 py-3 max-w-[90%] w-full space-y-3 shadow-sm">
           {turn.error ? (
-            <p className="text-sm text-red-600 flex items-start gap-1.5">
+            <p className="text-sm text-red-600 dark:text-red-400 flex items-start gap-1.5">
               <WarningCircle size={16} weight="bold" className="shrink-0 mt-0.5" />
               <span>I couldn't answer that: {turn.error}</span>
             </p>
           ) : turn.is_scalar ? (
             <div>
-              <p className="text-xs uppercase tracking-wide text-neutral-400">{turn.columns[0]}</p>
-              <p className="text-3xl font-semibold text-neutral-900">{formatValue(turn.rows[0]?.[0])}</p>
+              <p className="text-xs uppercase tracking-wide text-neutral-400 dark:text-neutral-500">
+                {turn.columns[0]}
+              </p>
+              <p className="text-3xl font-semibold text-neutral-900 dark:text-neutral-50">
+                {formatValue(turn.rows[0]?.[0])}
+              </p>
             </div>
           ) : turn.rows.length === 0 ? (
-            <p className="text-sm text-neutral-500">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">
               The query ran successfully but matched no rows. Try rephrasing, or check the loaded
               table's columns in the sidebar — the filter value may not match what's in the data.
             </p>
@@ -41,7 +45,7 @@ export function ChatMessage({ turn }: { turn: ChatTurn }) {
 
           {!turn.error && turn.rows.length > 0 && (
             <button
-              className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
+              className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1"
               onClick={() => downloadCsv(turn.columns, turn.rows)}
             >
               <DownloadSimple size={14} weight="bold" /> Download result as CSV
@@ -51,14 +55,14 @@ export function ChatMessage({ turn }: { turn: ChatTurn }) {
           {turn.sql && (
             <div className="text-xs">
               <button
-                className="flex items-center gap-1 text-neutral-500 font-medium select-none"
+                className="flex items-center gap-1 text-neutral-500 dark:text-neutral-400 font-medium select-none"
                 onClick={() => setSqlOpen((o) => !o)}
               >
                 {sqlOpen ? <CaretDown size={12} /> : <CaretRight size={12} />}
                 View generated SQL
               </button>
               {sqlOpen && (
-                <pre className="mt-2 bg-neutral-50 border border-neutral-200 rounded-lg p-3 overflow-x-auto text-neutral-700">
+                <pre className="mt-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg p-3 overflow-x-auto text-neutral-700 dark:text-neutral-300">
                   {turn.sql}
                 </pre>
               )}

@@ -20,9 +20,9 @@ export function ChatInput({
   }
 
   return (
-    <div className="flex items-center gap-2 border border-neutral-200 rounded-full bg-white px-4 py-2 shadow-sm">
+    <div className="flex items-center gap-2 border border-neutral-200 dark:border-neutral-700 rounded-full bg-white/90 dark:bg-neutral-900/90 backdrop-blur px-4 py-2 shadow-sm">
       <input
-        className="flex-1 text-sm outline-none disabled:cursor-not-allowed placeholder:text-neutral-400"
+        className="flex-1 text-sm outline-none disabled:cursor-not-allowed placeholder:text-neutral-400 dark:placeholder:text-neutral-500 text-neutral-900 dark:text-neutral-100 bg-transparent"
         placeholder={disabled ? 'Upload a file to get started...' : 'Ask a question about your data...'}
         value={value}
         disabled={disabled || loading}
@@ -32,7 +32,7 @@ export function ChatInput({
         }}
       />
       <button
-        className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-600 text-white disabled:bg-neutral-200 disabled:text-neutral-400"
+        className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-600 dark:bg-blue-500 text-white disabled:bg-neutral-200 dark:disabled:bg-neutral-700 disabled:text-neutral-400 dark:disabled:text-neutral-500"
         disabled={disabled || loading || !value.trim()}
         onClick={submit}
       >
