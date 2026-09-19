@@ -27,6 +27,17 @@ export async function getTables(sessionId: string): Promise<{ tables: UploadResp
   return parseOrThrow(res)
 }
 
+export async function removeTable(
+  sessionId: string,
+  tableName: string,
+): Promise<{ tables: UploadResponse['tables'] }> {
+  const res = await fetch(
+    `${BASE_URL}/api/tables/${encodeURIComponent(tableName)}?session_id=${encodeURIComponent(sessionId)}`,
+    { method: 'DELETE' },
+  )
+  return parseOrThrow(res)
+}
+
 export async function askQuestion(sessionId: string, question: string): Promise<AskResponse> {
   const res = await fetch(`${BASE_URL}/api/ask`, {
     method: 'POST',

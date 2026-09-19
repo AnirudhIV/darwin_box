@@ -131,3 +131,13 @@ def build_schema_text(tables_meta: dict) -> str:
         blocks.append("\n".join(block))
 
     return "\n\n".join(blocks)
+
+
+def remove_table(table_name: str, con, tables_meta: dict) -> bool:
+    """Unregisters one table/sheet from the session. Returns False if the
+    table wasn't loaded (no-op), True if it was removed."""
+    if table_name not in tables_meta:
+        return False
+    con.unregister(table_name)
+    del tables_meta[table_name]
+    return True

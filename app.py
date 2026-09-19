@@ -5,7 +5,7 @@ import duckdb
 import streamlit as st
 
 from charting import build_chart
-from data_manager import build_schema_text, load_uploaded_file
+from data_manager import build_schema_text, load_uploaded_file, remove_table
 from llm import generate_sql
 
 st.set_page_config(page_title="Data Q&A", page_icon="\U0001F4CA", layout="wide")
@@ -63,13 +63,16 @@ def render_sidebar():
 
     if st.session_state.tables_meta:
         st.sidebar.subheader("Loaded tables")
-        for name, meta in st.session_state.tables_meta.items():
+        for name, meta in list(st.session_state.tables_meta.items()):
             with st.sidebar.expander(f"{name} ({meta['n_rows']} rows)"):
                 st.caption(f"Source: {meta['source_filename']}" + (f" / sheet '{meta['sheet']}'" if meta["sheet"] else ""))
                 cols = ", ".join(c["name"] for c in meta["columns"])
                 st.caption(f"Columns: {cols}")
                 df_preview = st.session_state.con.execute(f'SELECT * FROM "{name}" LIMIT 5').fetchdf()
                 st.dataframe(df_preview, use_container_width=True, height=150)
+                if st.button("Remove", key=f"remove_{name}", use_container_width=True):
+                    remove_table(name, st.session_state.con, st.session_state.tables_meta)
+                    st.rerun()
     else:
         st.sidebar.info("Upload at least one file to start asking questions.")
 

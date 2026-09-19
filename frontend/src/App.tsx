@@ -1,6 +1,6 @@
 import { ChartBar } from '@phosphor-icons/react'
 import { useEffect, useState } from 'react'
-import { askQuestion, getTables, uploadFiles } from './api'
+import { askQuestion, getTables, removeTable, uploadFiles } from './api'
 import { ChatInput } from './components/ChatInput'
 import { ChatThread } from './components/ChatThread'
 import { FileUploader } from './components/FileUploader'
@@ -70,6 +70,16 @@ export default function App() {
     }
   }
 
+  const handleRemoveTable = async (tableName: string) => {
+    if (!sessionId) return
+    try {
+      const res = await removeTable(sessionId, tableName)
+      setTables(res.tables)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to remove table.')
+    }
+  }
+
   const handleClear = () => {
     clearSession()
     setTables([])
@@ -91,7 +101,7 @@ export default function App() {
         {uploading && <p className="text-xs text-neutral-400">Uploading...</p>}
         {error && <p className="text-xs text-red-600">{error}</p>}
 
-        <TableList tables={tables} />
+        <TableList tables={tables} onRemove={handleRemoveTable} />
 
         {tables.length > 0 && (
           <button

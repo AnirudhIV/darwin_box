@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 
 from charting import select_chart_spec
-from data_manager import build_schema_text, load_uploaded_file
+from data_manager import build_schema_text, load_uploaded_file, remove_table
 from llm import generate_sql
 from sessions import create_session, get_session
 from serialize import dataframe_to_table
@@ -29,7 +29,7 @@ app.add_middleware(
     allow_origins=[o for o in ["http://localhost:5173", _frontend_origin] if o],
     allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -105,6 +105,19 @@ def tables(session_id: str):
         summary["preview"] = {"columns": columns, "rows": rows}
 
     return {"tables": summaries}
+
+
+@app.delete("/api/tables/{table_name}")
+def delete_table(table_name: str, session_id: str):
+    session = get_session(session_id)
+    if session is None:
+        raise HTTPException(404, "Unknown session_id")
+
+    removed = remove_table(table_name, session["con"], session["tables_meta"])
+    if not removed:
+        raise HTTPException(404, f"Table '{table_name}' not found in this session.")
+
+    return {"tables": _table_summaries(session["tables_meta"])}
 
 
 @app.post("/api/ask")
