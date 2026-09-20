@@ -19,7 +19,7 @@ from llm import generate_sql
 from sessions import create_session, get_session
 from serialize import dataframe_to_table
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 app = FastAPI(default_response_class=ORJSONResponse)
 

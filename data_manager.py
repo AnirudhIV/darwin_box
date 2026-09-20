@@ -1,5 +1,8 @@
 """Upload -> DuckDB table registration and schema introspection."""
+import csv
+import io
 import re
+import warnings
 
 import pandas as pd
 
@@ -35,6 +38,112 @@ def _unique_table_name(base: str, existing: set[str]) -> str:
     return name
 
 
+_HEADER_SCAN_ROWS = 30
+
+
+def _promote_header(raw: pd.DataFrame) -> pd.DataFrame:
+    """Real-world sheets often have title/merged banner rows above the actual
+    header (and empty leading columns). pandas would treat the first banner row
+    as the header, yielding 'Unnamed: N' columns. Instead, drop fully-empty
+    rows/cols, find the first row that is 'wide' (title rows have 1 filled
+    cell, the header row has ~as many as the data) and mostly text, and use it
+    as the header."""
+    raw = raw.dropna(how="all").dropna(axis=1, how="all")
+    if raw.empty:
+        return raw
+
+    scan = raw.head(_HEADER_SCAN_ROWS)
+    counts = scan.notna().sum(axis=1)
+    threshold = max(2, -(-counts.max() * 6 // 10)) if counts.max() > 1 else 1
+
+    header_pos = 0
+    for pos in range(len(scan)):
+        row = scan.iloc[pos]
+        filled = row.dropna()
+        if len(filled) < threshold:
+            continue
+        text_cells = sum(not isinstance(v, (int, float, bool)) for v in filled)
+        if text_cells / len(filled) >= 0.6:
+            header_pos = pos
+            break
+
+    header = raw.iloc[header_pos]
+    df = raw.iloc[header_pos + 1:].copy()
+    df.columns = [
+        " ".join(str(v).split()) if pd.notna(v) and str(v).strip() else f"col_{i}"
+        for i, v in enumerate(header)
+    ]
+    return df.reset_index(drop=True).infer_objects()
+
+
+def _unique_name(base: str, taken) -> str:
+    name, i = base, 2
+    while name in taken:
+        name, i = f"{base}_{i}", i + 1
+    return name
+
+
+def _unpivot_date_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Attendance/roster style grids have one column per date (Employee | Dept |
+    2024-01-01 | 2024-01-02 ...). That is painful to query, so when most columns
+    are dates, melt them into long form: the other columns are kept as ids, plus
+    a real `date` column and a `value` column. Left alone unless >=5 columns and
+    >=half of all columns have date-like headers."""
+    df = df.copy()
+    df.columns = _dedupe([str(c) for c in df.columns])
+
+    date_cols: dict[str, pd.Timestamp] = {}
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        for col in df.columns:
+            text = col.strip()
+            if len(text) < 5 or text.isdigit():
+                continue
+            ts = pd.to_datetime(text, errors="coerce")
+            if pd.notna(ts):
+                date_cols[col] = ts
+
+    if len(date_cols) < 5 or len(date_cols) < len(df.columns) / 2:
+        return df
+
+    id_cols = [c for c in df.columns if c not in date_cols]
+    date_name = _unique_name("date", id_cols)
+    value_name = _unique_name("value", id_cols + [date_name])
+    long = df.melt(id_vars=id_cols, value_vars=list(date_cols), var_name=date_name, value_name=value_name)
+    long[date_name] = long[date_name].map(date_cols)
+    long = long.dropna(subset=[value_name]).reset_index(drop=True)
+
+    values = long[value_name]
+    if values.map(type).nunique() > 1:  # e.g. numbers mixed with 'A'/'P' codes
+        long[value_name] = values.astype(str)
+    return long.infer_objects()
+
+
+def _read_csv_ragged(uploaded_file) -> pd.DataFrame:
+    """Reads a CSV whose rows may have differing field counts (report exports
+    with a short title block above a wide table). pd.read_csv infers the width
+    from the first lines and raises 'Expected 2 fields, saw 70'; here every row
+    is padded to the widest one, then header detection runs as for Excel."""
+    data = uploaded_file.read()
+    if isinstance(data, bytes):
+        try:
+            data = data.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            data = data.decode("latin-1")
+    rows = list(csv.reader(io.StringIO(data)))
+    width = max((len(r) for r in rows), default=0)
+    raw = pd.DataFrame(
+        [[(c.strip() or None) for c in r] + [None] * (width - len(r)) for r in rows]
+    )
+    df = _promote_header(raw)
+    for col in df.columns:
+        if pd.api.types.is_object_dtype(df[col]) or pd.api.types.is_string_dtype(df[col]):
+            converted = pd.to_numeric(df[col], errors="coerce")
+            if converted.notna().sum() == df[col].notna().sum():
+                df[col] = converted
+    return _unpivot_date_columns(df)
+
+
 def load_uploaded_file(uploaded_file, con, tables_meta: dict) -> list[str]:
     """Read one uploaded file (CSV or XLSX), register table(s) in DuckDB,
     update tables_meta, and return the list of table names created."""
@@ -43,7 +152,7 @@ def load_uploaded_file(uploaded_file, con, tables_meta: dict) -> list[str]:
     created: list[str] = []
 
     if filename.lower().endswith(".csv"):
-        df = pd.read_csv(uploaded_file)
+        df = _read_csv_ragged(uploaded_file)
         table_name = _unique_table_name(base, set(tables_meta.keys()))
         _register_table(con, tables_meta, table_name, df, filename, sheet=None)
         created.append(table_name)
@@ -52,7 +161,7 @@ def load_uploaded_file(uploaded_file, con, tables_meta: dict) -> list[str]:
         xls = pd.ExcelFile(uploaded_file)
         multi_sheet = len(xls.sheet_names) > 1
         for sheet in xls.sheet_names:
-            df = pd.read_excel(xls, sheet_name=sheet)
+            df = _unpivot_date_columns(_promote_header(pd.read_excel(xls, sheet_name=sheet, header=None)))
             table_base = _sanitize(f"{base}_{sheet}") if multi_sheet else base
             table_name = _unique_table_name(table_base, set(tables_meta.keys()))
             _register_table(con, tables_meta, table_name, df, filename, sheet=sheet)
